@@ -1,9 +1,8 @@
-__author__ = 'steven'
-
 ''' description about this game'''
 '''
-Win:
-Lose:
+Win: if you can reach 60% accuracy in the given time, then, you wil the game
+Lose: if your health value is zero, or your accuracy is below 60% in the given time,
+      then, you will lose the game
 '''
 import pygame
 from pygame.locals import *
@@ -31,6 +30,7 @@ arrows = []
 
 # load all the images
 player = pygame.image.load("resources/images/dude.png")
+player1 = pygame.image.load("resources/images/dude2.png")
 grass = pygame.image.load("resources/images/grass.png")
 castle = pygame.image.load("resources/images/castle.png")
 arrow = pygame.image.load("resources/images/bullet.png")
@@ -48,19 +48,17 @@ pygame.mixer.music.load('resources/audio/moonlight.wav')
 pygame.mixer.music.play(-1, 0.0)
 pygame.mixer.music.set_volume(0.25)
 
+# determine whether to change player
+flag = 0
+
 badTimer = 100
 badTimerTemp = 0
 badGuys = [[640, 100]]
 healthValue = 194
 
-# print(player.get_width())
-# print(player.get_height())
-#
-# print(badGuy.get_width())
-# print(badGuy.get_height())
-
 running = 1
-exitCode = 1
+# exitCode mean which way to exit the game, 0 presents health value is 0; 1 presents time is up
+exitCode = 0
 while running:
     badTimer -= 1
     # clear the screen for every start
@@ -80,7 +78,10 @@ while running:
     # get the angle according to player position and mouse position
     angle = math.atan2(position[1] - (playerPos[1] + 32), position[0] - (playerPos[0] + 26))
     # get the rotated player
-    playerRot = pygame.transform.rotate(player, 360 - angle * 57.29)
+    if flag == 0:
+        playerRot = pygame.transform.rotate(player, 360 - angle * 57.29)
+    else:
+        playerRot = pygame.transform.rotate(player1, 360 - angle * 57.29)
     playerPosTemp = (playerPos[0] - playerRot.get_rect().width / 2, playerPos[1] - playerRot.get_rect().height / 2)
     screen.blit(playerRot, playerPosTemp)
 
@@ -151,16 +152,30 @@ while running:
     for healthTemp in range(healthValue):
         screen.blit(health, (healthTemp + 8, 8))
 
+    # draw the clock
+    font = pygame.font.Font(None, 24)
+    survivedTime = font.render(str(int((60000 - pygame.time.get_ticks()) / 60000)) + ':' +
+                               str(int((60000 - pygame.time.get_ticks()) % 60000 / 1000)).zfill(2), True, (0, 0, 0))
+    textRect = survivedTime.get_rect()
+    textRect.topright = [635, 5]
+    screen.blit(survivedTime, textRect)
+
+    # time is up
+    print(pygame.time.get_ticks())
+    if pygame.time.get_ticks() >= 60000:
+        running = 0
+        exitCode = 1
+
     # win or lose check
     if healthValue <= 0:
         running = 0
         exitCode = 0
+
+    # calculate the accuracy
     if acc[0] == 0:
         pass
     else:
         accuracy = acc[1] / acc[0] * 100
-
-    print(len(badGuys))
 
     pygame.display.flip()
 
@@ -194,11 +209,14 @@ while running:
         # event after mouse button has been pushed
         if event.type == pygame.MOUSEBUTTONDOWN:
             shoot.play()
+            flag = 1
             position = pygame.mouse.get_pos()
             acc[0] += 1
             # the first elem presents the angle, the second and the third present x coordinate and y coordinate
             arrows.append([math.atan2(position[1]-(playerPosTemp[1]+32), position[0]-(playerPosTemp[0]+26)),
                            playerPosTemp[0] + 32, playerPosTemp[1] + 32])
+        if event.type == pygame.MOUSEBUTTONUP:
+            flag = 0
 
     # move the player by keys: w a s d
     if keys[0]:
@@ -213,8 +231,17 @@ while running:
 # display win or lose
 if exitCode == 0:
     pygame.font.init()
-    font = pygame.font.Font(None, 24)
-    text = font.render('Accuracy: ' + str(int(accuracy)) + '%', True, (0, 255, 0))
+    fontNew = pygame.font.Font(None, 24)
+    text = fontNew.render('Accuracy: ' + str(int(accuracy)) + '%', True, (0, 255, 0))
+    textRect = text.get_rect()
+    textRect.centerx = screen.get_rect().centerx
+    textRect.centery = screen.get_rect().centery + 24
+    screen.blit(gameOver, (0, 0))
+    screen.blit(text, textRect)
+elif exitCode == 1 and int(accuracy) < 60:
+    pygame.font.init()
+    fontNew = pygame.font.Font(None, 24)
+    text = fontNew.render('Accuracy: ' + str(int(accuracy)) + '%', True, (0, 255, 0))
     textRect = text.get_rect()
     textRect.centerx = screen.get_rect().centerx
     textRect.centery = screen.get_rect().centery + 24
@@ -222,8 +249,8 @@ if exitCode == 0:
     screen.blit(text, textRect)
 else:
     pygame.font.init()
-    font = pygame.font.Font(None, 24)
-    text = font.render('Accuracy: ' + str(accuracy) + '%', True, (255, 0, 0))
+    fontNew = pygame.font.Font(None, 24)
+    text = fontNew.render('Accuracy: ' + str(accuracy) + '%', True, (255, 0, 0))
     textRect = text.get_rect()
     textRect.centerx = screen.get_rect().centerx
     textRect.centery = screen.get_rect().centery + 24
