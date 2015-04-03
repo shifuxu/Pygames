@@ -1,5 +1,10 @@
 __author__ = 'steven'
 
+''' description about this game'''
+'''
+Win:
+Lose:
+'''
 import pygame
 from pygame.locals import *
 import math
@@ -7,8 +12,8 @@ import random
 
 # init the game
 pygame.init()
-width = 700
-height = 500
+width = 640
+height = 480
 # define the screen
 screen = pygame.display.set_mode((width, height))
 
@@ -19,6 +24,7 @@ playerPos = [200, 200]
 # record the information of accuracy, first element presents the number of projectile arrows
 # second element presents the number of killed wild pigs
 acc = [0, 0]
+accuracy = 0
 # record the status of arrows
 arrows = []
 
@@ -44,7 +50,7 @@ pygame.mixer.music.set_volume(0.25)
 
 badTimer = 100
 badTimerTemp = 0
-badGuys = [[700, 100]]
+badGuys = [[640, 100]]
 healthValue = 194
 
 # print(player.get_width())
@@ -53,9 +59,9 @@ healthValue = 194
 # print(badGuy.get_width())
 # print(badGuy.get_height())
 
-print(badGuy.get_rect())
-
-while True:
+running = 1
+exitCode = 1
+while running:
     badTimer -= 1
     # clear the screen for every start
     screen.fill(0)
@@ -87,7 +93,7 @@ while True:
         bullet[1] += velX
         bullet[2] += velY
         # check whether the arrow is outside of the screen, if it is, then pop from the original list
-        if bullet[1] < -64 or bullet[1] > 700 or bullet[2] < -64 or bullet[2] > 500:
+        if bullet[1] < -64 or bullet[1] > 640 or bullet[2] < -64 or bullet[2] > 480:
             arrows.pop(index)
         # keep recording which bullet is outside of the screen
         index += 1
@@ -101,7 +107,7 @@ while True:
 
     # set the interval time slot of enemies
     if badTimer == 0:
-        badGuys.append([700, random.randint(50, 450)])
+        badGuys.append([640, random.randint(50, 450)])
         badTimer = 100 - badTimerTemp * 2
         if badTimerTemp >= 35:
             badTimerTemp = 35
@@ -132,7 +138,7 @@ while True:
             bulletRect.left = bullet[1]
             if badGuyRect.colliderect(bulletRect):
                 hit.play()
-                acc[0] += 1
+                acc[1] += 1
                 badGuys.pop(index1)
                 arrows.pop(index2)
             index2 += 1
@@ -140,13 +146,19 @@ while True:
         for badGuyPosTemp in badGuys:
             screen.blit(badGuy, (badGuyPosTemp[0], badGuyPosTemp[1]))
 
-
-    font = pygame.font.Font(None, 24)
-
     # draw the health bar
     screen.blit(healthBar, (5, 5))
     for healthTemp in range(healthValue):
         screen.blit(health, (healthTemp + 8, 8))
+
+    # win or lose check
+    if healthValue <= 0:
+        running = 0
+        exitCode = 0
+    if acc[0] == 0:
+        pass
+    else:
+        accuracy = acc[1] / acc[0] * 100
 
     print(len(badGuys))
 
@@ -197,3 +209,30 @@ while True:
         playerPos[1] += 5
     elif keys[3]:
         playerPos[0] += 5
+
+# display win or lose
+if exitCode == 0:
+    pygame.font.init()
+    font = pygame.font.Font(None, 24)
+    text = font.render('Accuracy: ' + str(int(accuracy)) + '%', True, (0, 255, 0))
+    textRect = text.get_rect()
+    textRect.centerx = screen.get_rect().centerx
+    textRect.centery = screen.get_rect().centery + 24
+    screen.blit(gameOver, (0, 0))
+    screen.blit(text, textRect)
+else:
+    pygame.font.init()
+    font = pygame.font.Font(None, 24)
+    text = font.render('Accuracy: ' + str(accuracy) + '%', True, (255, 0, 0))
+    textRect = text.get_rect()
+    textRect.centerx = screen.get_rect().centerx
+    textRect.centery = screen.get_rect().centery + 24
+    screen.blit(youWin, (0, 0))
+    screen.blit(text, textRect)
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit(0)
+    pygame.display.flip()
